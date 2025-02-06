@@ -27,6 +27,7 @@ end
 
 local function login()
 	local username, password = read_creds()
+	print("username", username, "password", password)
 	if not username or not password then
 		return false
 	end
