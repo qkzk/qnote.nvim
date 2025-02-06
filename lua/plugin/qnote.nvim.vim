@@ -4,4 +4,4 @@ if exists("g:loaded_qnote")
 endif
 let g:loaded_qnote = 1
 
-command! Qnote lua require("qnote").hello()
+command! Qnote lua require("qnote.nvim").hello()
