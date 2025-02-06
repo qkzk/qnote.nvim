@@ -1,4 +1,4 @@
--- lua/qnote.nvim/init.lua
+-- lua/qnote/init.lua
 local M = {}
 
 function M.hello()
