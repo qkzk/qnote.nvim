@@ -1,7 +1,7 @@
 -- lua/qnote/init.lua
 local M = {}
 
-local cookie_file = "/tmp/qnote_cookies.txt" -- Fichier temporaire pour stocker le cookie
+local cookie_file = "/home/quentin/cookies.txt" -- Fichier temporaire pour stocker le cookie
 
 local function read_creds()
 	local home = os.getenv("HOME") or "~"
