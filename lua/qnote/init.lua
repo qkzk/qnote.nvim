@@ -45,6 +45,7 @@ local function login()
 	print(cmd)
 
 	local response = vim.fn.systemlist(cmd)
+	print(response)
 
 	if vim.v.shell_error ~= 0 then
 		print("Échec de l'authentification.")
@@ -58,13 +59,16 @@ end
 function M.fetch_todos()
 	local url = "https://qkzk.ddns.net:4000/api/get_todos"
 	local cmd = string.format("curl -s -b %s %s", cookie_file, url)
+	print(cmd)
 	local response = vim.fn.systemlist(cmd)
+	print(response)
 
 	-- Si la requête échoue, tenter de se reconnecter puis refaire la requête
 	if vim.v.shell_error ~= 0 or (response[1] and response[1]:match("Unauthorized")) then
 		print("Session expirée, tentative de reconnexion...")
 		if login() then
 			response = vim.fn.systemlist(cmd) -- Retenter la récupération
+			print(response)
 		else
 			return
 		end
