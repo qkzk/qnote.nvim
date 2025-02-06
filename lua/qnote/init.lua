@@ -57,6 +57,7 @@ local function login()
 end
 
 function M.fetch_todos()
+	login()
 	local url = "https://qkzk.ddns.net:4000/api/get_todos"
 	local cmd = string.format("curl -s -b %s %s", cookie_file, url)
 	print(cmd)
