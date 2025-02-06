@@ -35,7 +35,7 @@ local function login()
 	local login_url = "https://qkzk.ddns.net:4000/login"
 
 	local cmd = string.format(
-		"curl -s -c %s -X POST -d 'username=%s&password=%s' -H 'Content-Type: application/x-www-form-urlencoded' %s",
+		"curl -v -s -c %s -X POST -d 'username=%s&password=%s' -H 'Content-Type: application/x-www-form-urlencoded' %s",
 		cookie_file,
 		username,
 		password,
