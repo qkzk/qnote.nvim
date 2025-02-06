@@ -42,6 +42,8 @@ local function login()
 		login_url
 	)
 
+	print(cmd)
+
 	local response = vim.fn.systemlist(cmd)
 
 	if vim.v.shell_error ~= 0 then
