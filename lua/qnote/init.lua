@@ -3,10 +3,35 @@ local M = {}
 
 local cookie_file = "/tmp/qnote_cookies.txt" -- Fichier temporaire pour stocker le cookie
 
+local function read_creds()
+	local home = os.getenv("HOME") or "~"
+	local creds_path = home .. "/creds.txt"
+	local file = io.open(creds_path, "r")
+
+	if not file then
+		print("Impossible de lire " .. creds_path)
+		return nil, nil
+	end
+
+	local username = file:read("*l") -- Lire la première ligne
+	local password = file:read("*l") -- Lire la deuxième ligne
+	file:close()
+
+	if not username or not password then
+		print("Fichier " .. creds_path .. " invalide")
+		return nil, nil
+	end
+
+	return username, password
+end
+
 local function login()
+	local username, password = read_creds()
+	if not username or not password then
+		return false
+	end
+
 	local login_url = "https://qkzk.ddns.net:4000/login"
-	local username = "ton_username" -- À remplacer ou demander dynamiquement
-	local password = "ton_mdp" -- Idem, éviter de le stocker en dur
 
 	local cmd = string.format(
 		"curl -s -c %s -X POST -d 'username=%s&password=%s' -H 'Content-Type: application/x-www-form-urlencoded' %s",
