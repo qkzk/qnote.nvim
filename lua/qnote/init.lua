@@ -187,7 +187,6 @@ function M.setup_autosave()
 		end,
 	})
 end
-
 function M.parse_todo_content(lines)
 	-- Vérifie qu'il y a au moins une ligne
 	if #lines == 0 then
@@ -225,6 +224,27 @@ function M.parse_todo_content(lines)
 	end
 
 	return "Checkboxes", { title = title, Checkboxes = { todo = todos, done = dones } }
+end
+
+function M.send_todo_update(id, content_type, payload)
+	local url = string.format("https://qkzk.ddns.net:4000/api/patch_todo_%s/%s", content_type:lower(), id)
+	local json_data = vim.fn.json_encode(payload)
+	local cmd = string.format(
+		"curl -s -X PATCH -b %s -H 'Content-Type: application/json' -d '%s' '%s'",
+		cookie_file,
+		json_data,
+		url
+	)
+
+	print(cmd)
+	local response = vim.fn.systemlist(cmd)
+	print(response)
+
+	if vim.v.shell_error == 0 then
+		print("Todo mis à jour avec succès !")
+	else
+		print("Erreur lors de la mise à jour du todo.")
+	end
 end
 
 M.setup_autosave()
