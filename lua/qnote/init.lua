@@ -62,13 +62,18 @@ function M.fetch_todos()
 	local cmd = string.format("curl -s -b %s %s", cookie_file, url)
 	print(cmd)
 	local response = vim.fn.systemlist(cmd)
-	print(response)
+
+	-- 🚀 Convertit la table en string JSON
+	response = table.concat(response, "\n")
+
+	print(response) -- Afficher le JSON brut pour vérifier
 
 	-- Si la requête échoue, tenter de se reconnecter puis refaire la requête
-	if vim.v.shell_error ~= 0 or (response[1] and response[1]:match("Unauthorized")) then
+	if vim.v.shell_error ~= 0 or response:match("Unauthorized") then
 		print("Session expirée, tentative de reconnexion...")
 		if login() then
 			response = vim.fn.systemlist(cmd) -- Retenter la récupération
+			response = table.concat(response, "\n") -- 🔥 Transformer encore en string
 			print(response)
 			return response
 		else
@@ -76,9 +81,9 @@ function M.fetch_todos()
 		end
 	end
 
-	-- Ouvre un buffer et affiche la réponse brute
+	-- Ouvre un buffer et affiche la réponse brute (DEBUG)
 	vim.api.nvim_command("new")
-	vim.api.nvim_buf_set_lines(0, 0, -1, false, response)
+	vim.api.nvim_buf_set_lines(0, 0, -1, false, vim.split(response, "\n"))
 	return response
 end
 
