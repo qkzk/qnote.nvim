@@ -70,6 +70,7 @@ function M.fetch_todos()
 		if login() then
 			response = vim.fn.systemlist(cmd) -- Retenter la récupération
 			print(response)
+			return response
 		else
 			return
 		end
