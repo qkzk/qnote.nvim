@@ -82,8 +82,8 @@ function M.fetch_todos()
 	end
 
 	-- Ouvre un buffer et affiche la réponse brute (DEBUG)
-	vim.api.nvim_command("new")
-	vim.api.nvim_buf_set_lines(0, 0, -1, false, vim.split(response, "\n"))
+	-- vim.api.nvim_command("new")
+	-- vim.api.nvim_buf_set_lines(0, 0, -1, false, vim.split(response, "\n"))
 	return response
 end
 
