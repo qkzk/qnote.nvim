@@ -79,10 +79,12 @@ function M.fetch_todos()
 	vim.api.nvim_command("new")
 	vim.api.nvim_buf_set_lines(0, 0, -1, false, response)
 end
+
 local telescope_qnote = require("qnote.telescope")
 
 function M.show_todos()
-	local todos_json = "[...]" -- Remplace avec les données JSON récupérées
+	local todos_json =
+		'[{"id":19,"title":"Forum des collégiens","content":{"Text":"préparer speech"},"archived":false},{"id":18,"title":"Speed dating","content":{"Text":"Emprunter l ordi"},"archived":false},{"id":6,"title":"Work & cool","content":{"Checkboxes":{"todo":["income","papers","expanse"],"done":["taxes"]}},"archived":false},{"id":4,"title":"courses","content":{"Checkboxes":{"todo":["petits pains","patates","pain","saumon\n","tomates","bananes","clémentine\n","pommes","tranches","parmesan","comté","eau","riz rouge sonia","sauce tomate","pellets","sable oiseaux","citron"],"done":[]}},"archived":false}]]' -- Remplace avec les données JSON récupérées
 	local todos = vim.json.decode(todos_json)
 	telescope_qnote.pick_todo(todos)
 end
