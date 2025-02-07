@@ -79,5 +79,12 @@ function M.fetch_todos()
 	vim.api.nvim_command("new")
 	vim.api.nvim_buf_set_lines(0, 0, -1, false, response)
 end
+local telescope_qnote = require("qnote.telescope")
+
+function M.show_todos()
+	local todos_json = "[...]" -- Remplace avec les données JSON récupérées
+	local todos = vim.json.decode(todos_json)
+	telescope_qnote.pick_todo(todos)
+end
 
 return M
