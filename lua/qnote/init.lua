@@ -130,16 +130,24 @@ function M.open_todo(todo)
 
 	-- Ajoute le contenu en fonction du type
 	if todo.content.Text then
-		table.insert(lines, todo.content.Text)
+		-- Découper la chaîne si elle contient des sauts de ligne
+		local text_lines = vim.split(todo.content.Text, "\n", { plain = true })
+		vim.list_extend(lines, text_lines)
 	elseif todo.content.Checkboxes then
 		table.insert(lines, "**TODO:**")
 		for _, item in ipairs(todo.content.Checkboxes.todo) do
-			table.insert(lines, "- [ ] " .. item)
+			local checkbox_lines = vim.split(item, "\n", { plain = true })
+			for _, line in ipairs(checkbox_lines) do
+				table.insert(lines, "- [ ] " .. line)
+			end
 		end
 		table.insert(lines, "")
 		table.insert(lines, "**DONE:**")
 		for _, item in ipairs(todo.content.Checkboxes.done) do
-			table.insert(lines, "- [x] " .. item)
+			local checkbox_lines = vim.split(item, "\n", { plain = true })
+			for _, line in ipairs(checkbox_lines) do
+				table.insert(lines, "- [x] " .. line)
+			end
 		end
 	end
 	-- Nom du fichier temporaire basé sur le titre ou l'ID
