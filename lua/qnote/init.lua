@@ -236,9 +236,9 @@ function M.send_todo_update(id, content_type, payload)
 		url
 	)
 
-	print(cmd)
+	-- print(cmd)
 	local response = vim.fn.systemlist(cmd)
-	print(response)
+	-- print(response)
 
 	if vim.v.shell_error == 0 then
 		print("Todo mis à jour avec succès !")

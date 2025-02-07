@@ -7,42 +7,47 @@ local action_state = require("telescope.actions.state")
 
 local M = {}
 
+local function make_entry(todo)
+	-- Affichage dans le picker
+	local kind = todo.content.Text and "Text" or "Checkbox"
+	return {
+		value = todo,
+		display = string.format("[%d] %s (%s)", todo.id, todo.title, kind),
+		ordinal = todo.title,
+		preview_command = function(entry, bufnr)
+			-- Remplit la preview
+			local lines = {}
+			table.insert(lines, "# " .. entry.value.title)
+			table.insert(lines, "")
+			if entry.value.content.Text then
+				vim.list_extend(lines, vim.split(entry.value.content.Text, "\n", { plain = true }))
+			elseif entry.value.content.Checkboxes then
+				table.insert(lines, "**TODO:**")
+				for _, item in ipairs(entry.value.content.Checkboxes.todo) do
+					vim.list_extend(lines, vim.split("- [ ] " .. item, "\n", { plain = true }))
+				end
+				table.insert(lines, "")
+				table.insert(lines, "**DONE:**")
+				for _, item in ipairs(entry.value.content.Checkboxes.done) do
+					vim.list_extend(lines, vim.split("- [x] " .. item, "\n", { plain = true }))
+				end
+			end
+			vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+		end,
+	}
+end
+local function make_finder(todos)
+	return {
+		results = todos,
+		entry_maker = make_entry,
+	}
+end
+
 function M.pick_todo(todos)
 	pickers
 		.new({}, {
 			prompt_title = "Todos",
-			finder = finders.new_table({
-				results = todos,
-				entry_maker = function(todo)
-					-- Affichage dans le picker
-					local kind = todo.content.Text and "Text" or "Checkbox"
-					return {
-						value = todo,
-						display = string.format("[%d] %s (%s)", todo.id, todo.title, kind),
-						ordinal = todo.title,
-						preview_command = function(entry, bufnr)
-							-- Remplit la preview
-							local lines = {}
-							table.insert(lines, "# " .. entry.value.title)
-							table.insert(lines, "")
-							if entry.value.content.Text then
-								vim.list_extend(lines, vim.split(entry.value.content.Text, "\n", { plain = true }))
-							elseif entry.value.content.Checkboxes then
-								table.insert(lines, "**TODO:**")
-								for _, item in ipairs(entry.value.content.Checkboxes.todo) do
-									vim.list_extend(lines, vim.split("- [ ] " .. item, "\n", { plain = true }))
-								end
-								table.insert(lines, "")
-								table.insert(lines, "**DONE:**")
-								for _, item in ipairs(entry.value.content.Checkboxes.done) do
-									vim.list_extend(lines, vim.split("- [x] " .. item, "\n", { plain = true }))
-								end
-							end
-							vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
-						end,
-					}
-				end,
-			}),
+			finder = finders.new_table(make_finder(todos)),
 			sorter = conf.generic_sorter({}),
 			previewer = previewers.new_buffer_previewer({
 				define_preview = function(self, entry, status)
