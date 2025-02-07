@@ -189,7 +189,18 @@ function M.setup_autosave()
 end
 
 function M.parse_todo_content(lines)
-	-- Ignore les lignes vides et en-tête
+	-- Vérifie qu'il y a au moins une ligne
+	if #lines == 0 then
+		return nil, "Erreur : contenu vide"
+	end
+
+	-- Récupère le titre de la première ligne (suppose le format "# titre")
+	local title = lines[1]:match("^#%s*(.+)")
+	if not title then
+		return nil, "Erreur : titre introuvable"
+	end
+
+	-- Récupère le contenu (sans le titre et les lignes vides en début)
 	local content_lines = {}
 	for i = 2, #lines do
 		if lines[i] ~= "" then
@@ -199,7 +210,7 @@ function M.parse_todo_content(lines)
 
 	-- Si c'est un simple texte, retourne `Text`
 	if not vim.tbl_contains(content_lines, "**TODO:**") then
-		return "Text", { Text = table.concat(content_lines, "\n") }
+		return "Text", { title = title, Text = table.concat(content_lines, "\n") }
 	end
 
 	-- Sinon, on parse les checkboxes
@@ -213,28 +224,7 @@ function M.parse_todo_content(lines)
 		end
 	end
 
-	return "Checkboxes", { Checkboxes = { todo = todos, done = dones } }
-end
-
-function M.send_todo_update(id, content_type, payload)
-	local url = string.format("https://qkzk.ddns.net:4000/api/patch_todo_%s/%s", content_type:lower(), id)
-	local json_data = vim.fn.json_encode(payload)
-	local cmd = string.format(
-		"curl -s -X PATCH -b %s -H 'Content-Type: application/json' -d '%s' '%s'",
-		cookie_file,
-		json_data,
-		url
-	)
-
-	print(cmd)
-	local response = vim.fn.systemlist(cmd)
-	print(response)
-
-	if vim.v.shell_error == 0 then
-		print("Todo mis à jour avec succès !")
-	else
-		print("Erreur lors de la mise à jour du todo.")
-	end
+	return "Checkboxes", { title = title, Checkboxes = { todo = todos, done = dones } }
 end
 
 M.setup_autosave()
