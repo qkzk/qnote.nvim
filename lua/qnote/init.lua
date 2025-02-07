@@ -27,7 +27,7 @@ end
 
 local function login()
 	local username, password = read_creds()
-	print("username", username, "password", password)
+	-- print("username", username, "password", password)
 	if not username or not password then
 		return false
 	end
@@ -42,10 +42,10 @@ local function login()
 		login_url
 	)
 
-	print(cmd)
+	-- print(cmd)
 
 	local response = vim.fn.systemlist(cmd)
-	print(response)
+	-- print(response)
 
 	if vim.v.shell_error ~= 0 then
 		print("Échec de l'authentification.")
@@ -60,13 +60,13 @@ function M.fetch_todos()
 	login()
 	local url = "https://qkzk.ddns.net:4000/api/get_todos"
 	local cmd = string.format("curl -s -b %s %s", cookie_file, url)
-	print(cmd)
+	-- print(cmd)
 	local response = vim.fn.systemlist(cmd)
 
 	-- 🚀 Convertit la table en string JSON
 	response = table.concat(response, "\n")
 
-	print(response) -- Afficher le JSON brut pour vérifier
+	-- print(response) -- Afficher le JSON brut pour vérifier
 
 	-- Si la requête échoue, tenter de se reconnecter puis refaire la requête
 	if vim.v.shell_error ~= 0 or response:match("Unauthorized") then
@@ -74,7 +74,7 @@ function M.fetch_todos()
 		if login() then
 			response = vim.fn.systemlist(cmd) -- Retenter la récupération
 			response = table.concat(response, "\n") -- 🔥 Transformer encore en string
-			print(response)
+			-- print(response)
 			return response
 		else
 			return response
@@ -91,8 +91,8 @@ local telescope_qnote = require("qnote.telescope")
 
 function M.show_todos()
 	local todos_json = M.fetch_todos()
-	print(todos_json)
-	print(vim.inspect(todos_json)) -- Debug: voir la vraie valeur retournée
+	-- print(todos_json)
+	-- print(vim.inspect(todos_json)) -- Debug: voir la vraie valeur retournée
 	if not todos_json or type(todos_json) ~= "string" then
 		print("Erreur : fetch_todos() ne retourne pas un JSON valide")
 		return
@@ -131,6 +131,13 @@ function M.open_todo(todo)
 			table.insert(lines, "- [x] " .. item)
 		end
 	end
+	-- Nom du fichier temporaire basé sur le titre ou l'ID
+	local filename = string.format("qnote_%d.md", todo.id)
+
+	-- Définit le nom du buffer (sans l'écrire sur disque)
+	vim.api.nvim_buf_set_name(0, filename)
+	vim.bo.bufhidden = "wipe" -- Ferme le buffer proprement après fermeture
+	vim.bo.swapfile = false -- Désactive les fichiers swap pour éviter les alertes
 
 	-- Écrit dans le buffer
 	vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)

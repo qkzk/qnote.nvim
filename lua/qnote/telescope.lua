@@ -16,7 +16,7 @@ function M.pick_todo(todos)
 					local kind = todo.content.Text and "Text" or "Checkboxes"
 					return {
 						value = todo,
-						display = string.format("%d | %s | %s", todo.id, todo.title, kind),
+						display = string.format("[%d] %s (%s)", todo.id, todo.title, kind),
 						ordinal = todo.title,
 						preview = function(_, entry, status)
 							local preview_bufnr = status.preview_bufnr
