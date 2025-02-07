@@ -83,10 +83,10 @@ end
 local telescope_qnote = require("qnote.telescope")
 
 function M.show_todos()
-	login()
 	local todos_json = M.fetch_todos()
-	if not todos_json then
-		print("Erreur : impossible de récupérer les todos")
+	print(vim.inspect(todos_json)) -- Debug: voir la vraie valeur retournée
+	if not todos_json or type(todos_json) ~= "string" then
+		print("Erreur : fetch_todos() ne retourne pas un JSON valide")
 		return
 	end
 
