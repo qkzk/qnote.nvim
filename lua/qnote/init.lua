@@ -106,6 +106,7 @@ function M.show_todos()
 
 	telescope_qnote.pick_todo(todos)
 end
+
 function M.open_todo(todo)
 	-- Vérifie si un buffer existe déjà pour ce todo
 	local bufnr = vim.fn.bufnr(string.format("qnote_%d.md", todo.id))
@@ -155,6 +156,64 @@ function M.open_todo(todo)
 
 	-- Écrit dans le buffer
 	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+end
+
+function M.setup_autosave()
+	vim.api.nvim_create_autocmd("BufWritePost", {
+		pattern = "qnote_*.md",
+		callback = function(args)
+			local bufnr = args.buf
+			local filename = vim.api.nvim_buf_get_name(bufnr)
+
+			-- Extrait l'ID du todo depuis le nom du fichier
+			local todo_id = filename:match("qnote_(%d+)%.md")
+			if not todo_id then
+				print("Erreur : Impossible d'extraire l'ID du todo.")
+				return
+			end
+
+			-- Récupère le contenu du buffer
+			local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+
+			-- Analyse le type de contenu
+			local content_type, payload = M.parse_todo_content(lines)
+
+			-- Envoie le todo mis à jour
+			if content_type and payload then
+				M.send_todo_update(todo_id, content_type, payload)
+			else
+				print("Erreur : Contenu invalide, aucune mise à jour envoyée.")
+			end
+		end,
+	})
+end
+
+function M.parse_todo_content(lines)
+	-- Ignore les lignes vides et en-tête
+	local content_lines = {}
+	for i = 2, #lines do
+		if lines[i] ~= "" then
+			table.insert(content_lines, lines[i])
+		end
+	end
+
+	-- Si c'est un simple texte, retourne `Text`
+	if not vim.tbl_contains(content_lines, "**TODO:**") then
+		return "Text", { Text = table.concat(content_lines, "\n") }
+	end
+
+	-- Sinon, on parse les checkboxes
+	local todos, dones = {}, {}
+
+	for _, line in ipairs(content_lines) do
+		if line:match("%- %[ %] (.+)") then
+			table.insert(todos, line:match("%- %[ %] (.+)"))
+		elseif line:match("%- %[x%] (.+)") then
+			table.insert(dones, line:match("%- %[x%] (.+)"))
+		end
+	end
+
+	return "Checkboxes", { Checkboxes = { todo = todos, done = dones } }
 end
 
 function M.send_todo_update(id, content_type, payload)
