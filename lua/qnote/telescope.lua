@@ -13,7 +13,7 @@ function M.pick_todo(todos)
 				results = todos,
 				entry_maker = function(todo)
 					-- Affichage dans le picker
-					local kind = todo.content.Text and "[Text]" or "[Checkbox]"
+					local kind = todo.content.Text and "Text" or "Checkbox"
 					return {
 						value = todo,
 						display = string.format("[%d] %s (%s)", todo.id, todo.title, kind),
