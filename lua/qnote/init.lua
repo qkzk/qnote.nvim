@@ -107,4 +107,33 @@ function M.show_todos()
 	telescope_qnote.pick_todo(todos)
 end
 
+function M.open_todo(todo)
+	-- Crée un nouveau buffer et une nouvelle fenêtre
+	vim.api.nvim_command("new")
+
+	-- Remplit le buffer avec le titre et le contenu
+	local lines = {
+		"# " .. todo.title, -- Titre
+		"", -- Ligne vide pour séparation
+	}
+
+	-- Ajoute le contenu en fonction du type
+	if todo.content.Text then
+		table.insert(lines, todo.content.Text)
+	elseif todo.content.Checkboxes then
+		table.insert(lines, "**TODO:**")
+		for _, item in ipairs(todo.content.Checkboxes.todo) do
+			table.insert(lines, "- [ ] " .. item)
+		end
+		table.insert(lines, "")
+		table.insert(lines, "**DONE:**")
+		for _, item in ipairs(todo.content.Checkboxes.done) do
+			table.insert(lines, "- [x] " .. item)
+		end
+	end
+
+	-- Écrit dans le buffer
+	vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
+end
+
 return M
