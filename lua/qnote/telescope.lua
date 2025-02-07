@@ -1,68 +1,58 @@
-local M = {}
-
 local pickers = require("telescope.pickers")
 local finders = require("telescope.finders")
 local conf = require("telescope.config").values
-local actions = require("telescope.actions")
 local previewers = require("telescope.previewers")
-local action_state = require("telescope.actions.state")
+
+local M = {}
 
 function M.pick_todo(todos)
 	pickers
 		.new({}, {
-			prompt_title = "qnote Todos",
+			prompt_title = "Todos",
 			finder = finders.new_table({
 				results = todos,
 				entry_maker = function(todo)
-					local kind = todo.content.Text and "Text" or "Checkboxes"
+					-- Affichage dans le picker
+					local kind = todo.content.Text and "[Text]" or "[Checkbox]"
 					return {
 						value = todo,
 						display = string.format("[%d] %s (%s)", todo.id, todo.title, kind),
 						ordinal = todo.title,
-						previewer = previewers.new_buffer_previewer({
-							define_preview = function(self, entry)
-								local content = entry.value.content
-								local text = ""
-
-								if content.Text then
-									text = content.Text
-								elseif content.Checkboxes then
-									local todo_items = table.concat(content.Checkboxes.todo, "\n- [ ] ")
-									local done_items = table.concat(content.Checkboxes.done, "\n- [x] ")
-									text = string.format("# TODO\n- [ ] %s\n\n# DONE\n- [x] %s", todo_items, done_items)
+						preview_command = function(entry, bufnr)
+							-- Remplit la preview
+							local lines = {}
+							table.insert(lines, "# " .. entry.value.title)
+							table.insert(lines, "")
+							if entry.value.content.Text then
+								vim.list_extend(lines, vim.split(entry.value.content.Text, "\n", { plain = true }))
+							elseif entry.value.content.Checkboxes then
+								table.insert(lines, "**TODO:**")
+								for _, item in ipairs(entry.value.content.Checkboxes.todo) do
+									vim.list_extend(lines, vim.split("- [ ] " .. item, "\n", { plain = true }))
 								end
-
-								vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, vim.split(text, "\n"))
-							end,
-						}),
-						-- preview = function(_, entry, status)
-						-- 	local preview_bufnr = status.preview_bufnr
-						-- 	local lines = {}
-						--
-						-- 	if entry.value.content.Text then
-						-- 		table.insert(lines, entry.value.content.Text)
-						-- 	elseif entry.value.content.Checkboxes then
-						-- 		table.insert(lines, "**TODO:**")
-						-- 		for _, item in ipairs(entry.value.content.Checkboxes.todo) do
-						-- 			table.insert(lines, "- [ ] " .. item)
-						-- 		end
-						-- 		table.insert(lines, "")
-						-- 		table.insert(lines, "**DONE:**")
-						-- 		for _, item in ipairs(entry.value.content.Checkboxes.done) do
-						-- 			table.insert(lines, "- [x] " .. item)
-						-- 		end
-						-- 	end
-						--
-						-- 	vim.api.nvim_buf_set_lines(preview_bufnr, 0, -1, false, lines)
-						-- end,
+								table.insert(lines, "")
+								table.insert(lines, "**DONE:**")
+								for _, item in ipairs(entry.value.content.Checkboxes.done) do
+									vim.list_extend(lines, vim.split("- [x] " .. item, "\n", { plain = true }))
+								end
+							end
+							vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+						end,
 					}
 				end,
 			}),
 			sorter = conf.generic_sorter({}),
-			attach_mappings = function(prompt_bufnr, map)
-				actions.select_default:replace(function()
-					actions.close(prompt_bufnr)
-					local selection = action_state.get_selected_entry()
+			previewer = previewers.new_buffer_previewer({
+				define_preview = function(self, entry, status)
+					if entry and entry.preview_command then
+						entry.preview_command(entry, self.state.bufnr)
+					end
+				end,
+			}),
+			attach_mappings = function(_, map)
+				map("i", "<CR>", function(prompt_bufnr)
+					local selection = require("telescope.actions.state").get_selected_entry()
+					require("telescope.actions").close(prompt_bufnr)
 					if selection then
 						require("qnote").open_todo(selection.value)
 					end
