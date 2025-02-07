@@ -83,7 +83,7 @@ end
 local telescope_qnote = require("qnote.telescope")
 
 function M.show_todos()
-	M.login()
+	login()
 	local todos_json = M.fetch_todos()
 	if not todos_json then
 		print("Erreur : impossible de récupérer les todos")
