@@ -109,7 +109,18 @@ end
 
 function M.open_todo(todo)
 	-- Crée un nouveau buffer et une nouvelle fenêtre
-	vim.api.nvim_command("new")
+	local bufnr = vim.fn.bufnr(string.format("qnote_%d.md", todo.id))
+
+	if bufnr == -1 then
+		-- Crée un nouveau buffer s'il n'existe pas encore
+		bufnr = vim.api.nvim_create_buf(false, true)
+		vim.api.nvim_buf_set_name(bufnr, string.format("qnote_%d.md", todo.id))
+		vim.bo[bufnr].bufhidden = "wipe"
+		vim.bo[bufnr].swapfile = false
+	end
+
+	-- Change le buffer courant sans ouvrir une nouvelle fenêtre
+	vim.api.nvim_set_current_buf(bufnr)
 
 	-- Remplit le buffer avec le titre et le contenu
 	local lines = {
@@ -135,12 +146,12 @@ function M.open_todo(todo)
 	local filename = string.format("qnote_%d.md", todo.id)
 
 	-- Définit le nom du buffer (sans l'écrire sur disque)
-	vim.api.nvim_buf_set_name(0, filename)
+	vim.api.nvim_buf_set_name(bufnr, filename)
 	vim.bo.bufhidden = "wipe" -- Ferme le buffer proprement après fermeture
 	vim.bo.swapfile = false -- Désactive les fichiers swap pour éviter les alertes
 
 	-- Écrit dans le buffer
-	vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
+	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
 end
 
 return M
