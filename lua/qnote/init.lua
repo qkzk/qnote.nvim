@@ -84,7 +84,7 @@ local telescope_qnote = require("qnote.telescope")
 
 function M.show_todos()
 	local todos_json =
-		'[{"id":19,"title":"Forum des collégiens","content":{"Text":"préparer speech"},"archived":false},{"id":6,"title":"Work & cool","content":{"Checkboxes":{"todo":["income","papers","expanse"],"done":["taxes"]}},"archived":false}]]' -- Remplace avec les données JSON récupérées
+		'[{"id":19,"title":"Forum des collégiens","content":{"Text":"préparer speech"},"archived":false},{"id":6,"title":"Work & cool","content":{"Checkboxes":{"todo":["income","papers","expanse"],"done":["taxes"]}},"archived":false}]' -- Remplace avec les données JSON récupérées
 	local todos = vim.json.decode(todos_json)
 	telescope_qnote.pick_todo(todos)
 end
