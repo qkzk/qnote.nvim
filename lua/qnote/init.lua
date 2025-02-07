@@ -83,9 +83,18 @@ end
 local telescope_qnote = require("qnote.telescope")
 
 function M.show_todos()
-	local todos_json =
-		'[{"id":19,"title":"Forum des collégiens","content":{"Text":"préparer speech"},"archived":false},{"id":6,"title":"Work & cool","content":{"Checkboxes":{"todo":["income","papers","expanse"],"done":["taxes"]}},"archived":false}]' -- Remplace avec les données JSON récupérées
-	local todos = vim.json.decode(todos_json)
+	local todos_json = M.fetch_todos()
+	if not todos_json then
+		print("Erreur : impossible de récupérer les todos")
+		return
+	end
+
+	local success, todos = pcall(vim.json.decode, todos_json)
+	if not success then
+		print("Erreur : impossible de décoder les todos")
+		return
+	end
+
 	telescope_qnote.pick_todo(todos)
 end
 
