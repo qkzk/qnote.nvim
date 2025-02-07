@@ -209,7 +209,7 @@ function M.parse_todo_content(lines)
 
 	-- Si c'est un simple texte, retourne `Text`
 	if not vim.tbl_contains(content_lines, "**TODO:**") then
-		return "Text", { title = title, Text = table.concat(content_lines, "\n") }
+		return "Text", { title = title, content = table.concat(content_lines, "\n") }
 	end
 
 	-- Sinon, on parse les checkboxes
@@ -223,7 +223,7 @@ function M.parse_todo_content(lines)
 		end
 	end
 
-	return "Checkboxes", { title = title, Checkboxes = { todo = todos, done = dones } }
+	return "Checkboxes", { title = title, todo = todos, done = dones }
 end
 
 function M.send_todo_update(id, content_type, payload)
