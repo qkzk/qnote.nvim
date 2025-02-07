@@ -79,6 +79,7 @@ function M.fetch_todos()
 	-- Ouvre un buffer et affiche la réponse brute
 	vim.api.nvim_command("new")
 	vim.api.nvim_buf_set_lines(0, 0, -1, false, response)
+	return response
 end
 
 local telescope_qnote = require("qnote.telescope")
