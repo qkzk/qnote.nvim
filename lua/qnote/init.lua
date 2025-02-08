@@ -1,15 +1,21 @@
 -- lua/qnote/init.lua
 local M = {}
 
-local cookie_file = "/tmp/qnote_cookies.txt" -- Fichier temporaire pour stocker le cookie
+M.config = {
+	creds_file = "~/creds.txt",
+	cookie_file = "/tmp/qnote_cookies.txt", -- Par défaut
+	server_url = "https://qkzk.ddns.net:4000", -- Par défaut
+}
+
+function M.setup(config)
+	M.config = vim.tbl_extend("force", M.config, config or {})
+end
 
 local function read_creds()
-	local home = os.getenv("HOME") or "~"
-	local creds_path = home .. "/creds.txt"
-	local file = io.open(creds_path, "r")
+	local file = io.open(M.config.creds_file, "r")
 
 	if not file then
-		print("Impossible de lire " .. creds_path)
+		print("Impossible de lire " .. M.config.creds_file)
 		return nil, nil
 	end
 
@@ -18,7 +24,7 @@ local function read_creds()
 	file:close()
 
 	if not username or not password then
-		print("Fichier " .. creds_path .. " invalide")
+		print("Fichier " .. M.config.creds_file .. " invalide")
 		return nil, nil
 	end
 
@@ -32,11 +38,11 @@ local function login()
 		return false
 	end
 
-	local login_url = "https://qkzk.ddns.net:4000/login"
+	local login_url = string.format("%s/login", M.config.server_url)
 
 	local cmd = string.format(
 		"curl -v -s -c %s -X POST -d 'username=%s&password=%s' -H 'Content-Type: application/x-www-form-urlencoded' %s",
-		cookie_file,
+		M.config.cookie_file,
 		username,
 		password,
 		login_url
@@ -58,8 +64,8 @@ end
 
 function M.fetch_todos()
 	login()
-	local url = "https://qkzk.ddns.net:4000/api/get_todos"
-	local cmd = string.format("curl -s -b %s %s", cookie_file, url)
+	local url = string.format("%s/api/get_todos", M.config.server_url)
+	local cmd = string.format("curl -s -b %s %s", M.config.cookie_file, url)
 	-- print(cmd)
 	local response = vim.fn.systemlist(cmd)
 
@@ -109,12 +115,12 @@ end
 
 function M.open_todo(todo)
 	-- Vérifie si un buffer existe déjà pour ce todo
-	local bufnr = vim.fn.bufnr(string.format("qnote_%d.md", todo.id))
+	local bufnr = vim.fn.bufnr(string.format("/tmp/qnote_%d.md", todo.id))
 
 	if bufnr == -1 then
 		-- Crée un nouveau buffer s'il n'existe pas encore
 		bufnr = vim.api.nvim_create_buf(true, false) -- Buffer listé, non éphémère
-		vim.api.nvim_buf_set_name(bufnr, string.format("qnote_%d.md", todo.id))
+		vim.api.nvim_buf_set_name(bufnr, string.format("/tmp/qnote_%d.md", todo.id))
 
 		-- Assurer que le buffer est sauvegardable
 		vim.bo[bufnr].buflisted = true
@@ -231,7 +237,7 @@ function M.send_todo_update(id, content_type, payload)
 	local json_data = vim.fn.json_encode(payload)
 	local cmd = string.format(
 		"curl -s -X PATCH -b %s -H 'Content-Type: application/json' -d '%s' '%s'",
-		cookie_file,
+		M.config.cookie_file,
 		json_data,
 		url
 	)
