@@ -2,7 +2,7 @@
 local M = {}
 
 M.config = {
-	creds_file = "~/creds.txt",
+	creds_file = "~/tmp/creds.txt",
 	cookie_file = "/tmp/qnote_cookies.txt", -- Par défaut
 	server_url = "https://qkzk.ddns.net:4000", -- Par défaut
 }
