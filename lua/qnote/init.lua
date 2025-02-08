@@ -264,7 +264,7 @@ function M.create_todo(content_type)
 	vim.bo[bufnr].swapfile = false
 
 	bufnr = vim.api.nvim_create_buf(true, false) -- Buffer listé, non éphémère
-	vim.api.nvim_buf_set_name(bufnr, string.format("/tmp/qnote_%d.md", todo.id))
+	vim.api.nvim_buf_set_name(bufnr, "/tmp/qnote_new.md")
 
 	local default_content
 	if content_type == "text" then
