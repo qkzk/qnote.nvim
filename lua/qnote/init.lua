@@ -325,12 +325,12 @@ M.setup_autosave()
 
 vim.api.nvim_create_user_command("Qnote", function(opts)
 	local arg = table.concat(opts.fargs, " ")
-	if !arg then
+	if arg == "show" then
 		require("qnote").show_todos()
 	elseif arg == "new text" then
-		require('qnote').create_todo("text")
+		require("qnote").create_todo("text")
 	elseif arg == "new todo" then
-		require('qnote').create_todo("checkboxes")
+		require("qnote").create_todo("checkboxes")
 	else
 		print("Usage: :Qnote new text | new checkboxes")
 	end
