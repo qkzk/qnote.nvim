@@ -2,7 +2,7 @@
 local M = {}
 
 M.config = {
-	creds_file = "~/tmp/creds.txt",
+	creds_file = "~/creds.txt",
 	cookie_file = "/tmp/qnote_cookies.txt", -- Par défaut
 	server_url = "https://qkzk.ddns.net:4000", -- Par défaut
 }
@@ -253,5 +253,87 @@ function M.send_todo_update(id, content_type, payload)
 	end
 end
 
+function M.create_todo(content_type)
+	local bufnr = vim.api.nvim_create_buf(false, true)
+	local filename = "/tmp/qnote_new.md"
+
+	vim.api.nvim_buf_set_name(bufnr, filename)
+	vim.bo[bufnr].bufhidden = "wipe"
+	vim.bo[bufnr].swapfile = false
+
+	local default_content
+	if content_type == "text" then
+		default_content = { "# Title", "", "Your content here..." }
+	else
+		default_content = { "# Title", "", "**TODO:**", "- [ ] Task 1", "", "**DONE:**", "- [x] Completed task" }
+	end
+
+	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, default_content)
+	vim.api.nvim_set_current_buf(bufnr)
+
+	-- Ajouter un autocmd pour sauvegarder et envoyer
+	vim.api.nvim_create_autocmd("BufWritePost", {
+		buffer = bufnr,
+		callback = function()
+			M.send_new_todo(bufnr, content_type)
+		end,
+	})
+end
+
+function M.send_new_todo(bufnr, content_type)
+	local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+	local title = lines[1]:gsub("^#%s*", "") -- Supprime le `#` devant le titre
+
+	-- Parser le contenu
+	local content_type, payload = M.parse_todo_content(lines)
+	payload.title = title -- Ajouter le titre
+
+	-- Sélectionner la route
+	local route = (content_type == "Text") and "/api/post_text" or "/api/post_checkboxes"
+	local url = M.config.server_url .. route
+	local json_data = vim.fn.json_encode(payload)
+
+	-- Exécuter la requête
+	local cmd = string.format(
+		"curl -s -X POST -b %s -H 'Content-Type: application/json' -d '%s' '%s'",
+		M.config.cookie_file,
+		vim.fn.shellescape(json_data),
+		url
+	)
+
+	print(cmd)
+	local response = vim.fn.systemlist(cmd)
+	print(response)
+
+	if vim.v.shell_error == 0 then
+		print("Todo créé avec succès !")
+	else
+		print("Erreur lors de la création du todo.")
+	end
+end
+
 M.setup_autosave()
+-- vim.api.nvim_create_user_command("QnoteNewText", function()
+-- 	require("qnote").create_todo("text")
+-- end, {})
+-- vim.api.nvim_create_user_command("QnoteNewCheckbox", function()
+-- 	require("qnote").create_todo("checkboxes")
+-- end, {})
+-- vim.api.nvim_create_user_command("Qnote", function()
+-- 	require("qnote").show_todos()
+-- end, {})
+
+vim.api.nvim_create_user_command("Qnote", function(opts)
+	local arg = table.concat(opts.fargs, " ")
+	if !arg then
+		require("qnote").show_todos()
+	elseif arg == "new text" then
+		require('qnote').create_todo("text")
+	elseif arg == "new todo" then
+		require('qnote').create_todo("checkboxes")
+	else
+		print("Usage: :Qnote new text | new checkboxes")
+	end
+end, { nargs = "+" }) -- Accepte plusieurs arguments
+
 return M
