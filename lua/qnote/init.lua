@@ -258,8 +258,13 @@ function M.create_todo(content_type)
 	local filename = "/tmp/qnote_new.md"
 
 	vim.api.nvim_buf_set_name(bufnr, filename)
+	vim.bo[bufnr].buflisted = true
 	vim.bo[bufnr].bufhidden = "wipe"
+	vim.bo[bufnr].buftype = "" -- Important pour permettre la sauvegarde
 	vim.bo[bufnr].swapfile = false
+
+	bufnr = vim.api.nvim_create_buf(true, false) -- Buffer listé, non éphémère
+	vim.api.nvim_buf_set_name(bufnr, string.format("/tmp/qnote_%d.md", todo.id))
 
 	local default_content
 	if content_type == "text" then
