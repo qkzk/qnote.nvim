@@ -267,7 +267,7 @@ end
 
 function M.create_todo(content_type)
 	local bufnr = vim.api.nvim_create_buf(false, true)
-	local filename = "/tmp/qnote_new.md"
+	local filename = "/tmp/qnote_new_" .. string_random(4) .. ".md"
 
 	vim.api.nvim_buf_set_name(bufnr, filename)
 	vim.bo[bufnr].buflisted = true
@@ -276,7 +276,7 @@ function M.create_todo(content_type)
 	vim.bo[bufnr].swapfile = false
 
 	bufnr = vim.api.nvim_create_buf(true, false) -- Buffer listé, non éphémère
-	vim.api.nvim_buf_set_name(bufnr, "/tmp/qnote_new_" .. string_random(4) .. ".md")
+	vim.api.nvim_buf_set_name(bufnr, filename)
 
 	local default_content
 	if content_type == "text" then
@@ -312,7 +312,7 @@ function M.send_new_todo(bufnr, content_type)
 
 	-- Exécuter la requête
 	local cmd = string.format(
-		"curl -s -X POST -b %s -H 'Content-Type: application/json' -d '%s' '%s'",
+		"curl -s -X POST -b %s -H 'Content-Type: application/json' -d %s '%s'",
 		M.config.cookie_file,
 		vim.fn.shellescape(json_data),
 		url
@@ -325,7 +325,7 @@ function M.send_new_todo(bufnr, content_type)
 	if vim.v.shell_error == 0 then
 		print("Todo créé avec succès !")
 	else
-		print("Erreur lors de la création du todo.")
+		print("Erreur lors de la création du todo.", vim.v.shell_error)
 	end
 end
 
@@ -349,7 +349,7 @@ vim.api.nvim_create_user_command("Qnote", function(opts)
 	elseif arg == "new todo" then
 		require("qnote").create_todo("checkboxes")
 	else
-		print("Usage: :Qnote new text | new checkboxes")
+		print("Usage: :Qnote show | new text | new checkboxes")
 	end
 end, { nargs = "+" }) -- Accepte plusieurs arguments
 
