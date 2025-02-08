@@ -276,7 +276,6 @@ function M.create_todo(content_type)
 	vim.bo[bufnr].swapfile = false
 
 	bufnr = vim.api.nvim_create_buf(true, false) -- Buffer listé, non éphémère
-	vim.api.nvim_buf_set_name(bufnr, filename)
 
 	local default_content
 	if content_type == "text" then
