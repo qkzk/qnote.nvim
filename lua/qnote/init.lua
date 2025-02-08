@@ -11,6 +11,18 @@ function M.setup(config)
 	M.config = vim.tbl_extend("force", M.config, config or {})
 end
 
+local sets = { { 97, 122 }, { 65, 90 }, { 48, 57 } } -- a-z, A-Z, 0-9
+
+local function string_random(chars)
+	local str = ""
+	for i = 1, chars do
+		math.randomseed(os.clock() ^ 5)
+		local charset = sets[math.random(1, #sets)]
+		str = str .. string.char(math.random(charset[1], charset[2]))
+	end
+	return str
+end
+
 local function read_creds()
 	local file = io.open(M.config.creds_file, "r")
 
@@ -264,7 +276,7 @@ function M.create_todo(content_type)
 	vim.bo[bufnr].swapfile = false
 
 	bufnr = vim.api.nvim_create_buf(true, false) -- Buffer listé, non éphémère
-	vim.api.nvim_buf_set_name(bufnr, "/tmp/qnote_new.md")
+	vim.api.nvim_buf_set_name(bufnr, "/tmp/qnote_new_" .. string_random(4) .. ".md")
 
 	local default_content
 	if content_type == "text" then
