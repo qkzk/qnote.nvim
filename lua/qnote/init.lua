@@ -341,19 +341,6 @@ function M.send_qnote_request(method, endpoint, id)
 	end
 end
 
--- vim.api.nvim_create_user_command("Qnote", function(opts)
--- 	local arg = table.concat(opts.fargs, " ")
--- 	if arg == "show" then
--- 		require("qnote").show_todos()
--- 	elseif arg == "new text" then
--- 		require("qnote").create_todo("text")
--- 	elseif arg == "new todo" then
--- 		require("qnote").create_todo("checkboxes")
--- 	else
--- 		print("Usage: :Qnote show | new text | new checkboxes")
--- 	end
--- end, { nargs = "+" }) -- Accepte plusieurs arguments
-
 M.usage = "Usage: Qnote show | new text | new todo | {archive|delete} {id}"
 
 local function run_command(opts)
@@ -382,16 +369,15 @@ local function run_command(opts)
 	end
 end
 
-vim.api.nvim_create_user_command("Qnote", run_command, {
-	nargs = "*",
-	complete = function(_, line)
-		local commands = { "show", "new text", "new todo", "archive", "delete" }
-		local words = vim.split(line, "%s+")
-		return vim.tbl_filter(function(cmd)
-			return vim.startswith(cmd, words[#words])
-		end, commands)
-	end,
-})
+local function complete(_, line)
+	local commands = { "show", "new text", "new todo", "archive", "delete" }
+	local words = vim.split(line, "%s+")
+	return vim.tbl_filter(function(cmd)
+		return vim.startswith(cmd, words[#words])
+	end, commands)
+end
+
+vim.api.nvim_create_user_command("Qnote", run_command, { nargs = "*", complete = complete })
 
 M.setup_autosave()
 
