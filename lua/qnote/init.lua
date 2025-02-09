@@ -364,10 +364,11 @@ vim.api.nvim_create_user_command("Qnote", function(opts)
 	end
 
 	if action == "show" then
-		require("qnote").show_todos()
+		M.show_todos()
 	elseif action == "new" and args[2] == "text" then
-		require("qnote").create_todo("text")
+		M.create_todo("text")
 	elseif action == "new" and args[2] == "todo" then
+		M.create_todo("checkboxes")
 	elseif action == "archive" then
 		local id = tonumber(args[2])
 		M.send_qnote_request("PATCH", "toggle_archived", id)
@@ -375,7 +376,7 @@ vim.api.nvim_create_user_command("Qnote", function(opts)
 		local id = tonumber(args[2])
 		M.send_qnote_request("DELETE", "delete_todo", id)
 	else
-		print("Action inconnue: " .. action)
+		print("Usage: Qnote show | new text | new todo | {archive|delete} {id}")
 	end
 end, { nargs = "*" })
 M.setup_autosave()
