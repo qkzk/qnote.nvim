@@ -380,7 +380,19 @@ vim.api.nvim_create_user_command("Qnote", function(opts)
 	else
 		print(M.usage)
 	end
-end, { nargs = "*" })
+end, {
+	nargs = "*",
+	complete = function(_, line)
+		local commands = { "show", "new text", "new todo", "archive", "delete" }
+		local words = vim.split(line, "%s+")
+		if #words == 2 and (words[2] == "archive" or words[2] == "delete") then
+			return { "1", "2", "3" } -- Remplace par la récupération des IDs réels
+		end
+		return vim.tbl_filter(function(cmd)
+			return vim.startswith(cmd, words[#words])
+		end, commands)
+	end,
+})
 
 M.setup_autosave()
 

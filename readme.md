@@ -2,9 +2,6 @@
 
 ## TODO 
 
-- [ ] create
-- [ ] delete
-- [ ] archive
+- [ ] complétion
 - [ ] better error messages
-- [ ] help messages 
 - [ ] autoformat (lol)
