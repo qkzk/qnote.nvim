@@ -385,9 +385,6 @@ end, {
 	complete = function(_, line)
 		local commands = { "show", "new text", "new todo", "archive", "delete" }
 		local words = vim.split(line, "%s+")
-		if #words == 2 and (words[2] == "archive" or words[2] == "delete") then
-			return { "1", "2", "3" } -- Remplace par la récupération des IDs réels
-		end
 		return vim.tbl_filter(function(cmd)
 			return vim.startswith(cmd, words[#words])
 		end, commands)
@@ -395,5 +392,27 @@ end, {
 })
 
 M.setup_autosave()
+
+local cmp = require("cmp")
+
+cmp.setup.cmdline(":", {
+	mapping = cmp.mapping.preset.cmdline(),
+	sources = cmp.config.sources({
+		{ name = "cmdline" },
+		{
+			name = "qnote",
+			keyword_length = 1,
+			complete = function(_, callback)
+				callback({
+					{ label = "show" },
+					{ label = "new text" },
+					{ label = "new todo" },
+					{ label = "archive" },
+					{ label = "delete" },
+				})
+			end,
+		},
+	}),
+})
 
 return M
