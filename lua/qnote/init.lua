@@ -356,7 +356,7 @@ end
 
 M.usage = "Usage: Qnote show | new text | new todo | {archive|delete} {id}"
 
-vim.api.nvim_create_user_command("Qnote", function(opts)
+local function run_command(opts)
 	local args = vim.split(opts.args, " ")
 	local action = args[1]
 
@@ -380,7 +380,9 @@ vim.api.nvim_create_user_command("Qnote", function(opts)
 	else
 		print(M.usage)
 	end
-end, {
+end
+
+vim.api.nvim_create_user_command("Qnote", run_command, {
 	nargs = "*",
 	complete = function(_, line)
 		local commands = { "show", "new text", "new todo", "archive", "delete" }
@@ -392,27 +394,5 @@ end, {
 })
 
 M.setup_autosave()
-
-local cmp = require("cmp")
-
-cmp.setup.cmdline(":", {
-	mapping = cmp.mapping.preset.cmdline(),
-	sources = cmp.config.sources({
-		{ name = "cmdline" },
-		{
-			name = "qnote",
-			keyword_length = 1,
-			complete = function(_, callback)
-				callback({
-					{ label = "show" },
-					{ label = "new text" },
-					{ label = "new todo" },
-					{ label = "archive" },
-					{ label = "delete" },
-				})
-			end,
-		},
-	}),
-})
 
 return M
