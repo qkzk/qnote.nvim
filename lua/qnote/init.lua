@@ -327,10 +327,12 @@ function M.send_new_todo(bufnr, content_type)
 end
 
 function M.send_qnote_request(method, endpoint, id)
-	local url = string.format("%s/api/%s/%d", qnote_config.server_url, endpoint, id)
-	local cmd = string.format("curl -s -X %s -b %s '%s'", method, qnote_config.cookie_file, url)
+	local url = string.format("%s/api/%s/%d", M.config.server_url, endpoint, id)
+	local cmd = string.format("curl -s -X %s -b %s '%s'", method, M.config.cookie_file, url)
 
+	print(cmd)
 	local response = vim.fn.systemlist(cmd)
+	print(response)
 
 	if vim.v.shell_error == 0 then
 		print(string.format("Todo %d mis à jour avec succès !", id))
@@ -339,18 +341,18 @@ function M.send_qnote_request(method, endpoint, id)
 	end
 end
 
-vim.api.nvim_create_user_command("Qnote", function(opts)
-	local arg = table.concat(opts.fargs, " ")
-	if arg == "show" then
-		require("qnote").show_todos()
-	elseif arg == "new text" then
-		require("qnote").create_todo("text")
-	elseif arg == "new todo" then
-		require("qnote").create_todo("checkboxes")
-	else
-		print("Usage: :Qnote show | new text | new checkboxes")
-	end
-end, { nargs = "+" }) -- Accepte plusieurs arguments
+-- vim.api.nvim_create_user_command("Qnote", function(opts)
+-- 	local arg = table.concat(opts.fargs, " ")
+-- 	if arg == "show" then
+-- 		require("qnote").show_todos()
+-- 	elseif arg == "new text" then
+-- 		require("qnote").create_todo("text")
+-- 	elseif arg == "new todo" then
+-- 		require("qnote").create_todo("checkboxes")
+-- 	else
+-- 		print("Usage: :Qnote show | new text | new checkboxes")
+-- 	end
+-- end, { nargs = "+" }) -- Accepte plusieurs arguments
 
 vim.api.nvim_create_user_command("Qnote", function(opts)
 	local args = vim.split(opts.args, " ")
