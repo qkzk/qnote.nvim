@@ -43,6 +43,33 @@ local function make_finder(todos)
 	}
 end
 
+-- function M.pick_todo(todos)
+-- 	pickers
+-- 		.new({}, {
+-- 			prompt_title = "Todos",
+-- 			finder = finders.new_table(make_finder(todos)),
+-- 			sorter = conf.generic_sorter({}),
+-- 			previewer = previewers.new_buffer_previewer({
+-- 				define_preview = function(self, entry, status)
+-- 					if entry and entry.preview_command then
+-- 						entry.preview_command(entry, self.state.bufnr)
+-- 					end
+-- 				end,
+-- 			}),
+-- 			attach_mappings = function(prompt_bufnr, map)
+-- 				actions.select_default:replace(function()
+-- 					actions.close(prompt_bufnr)
+-- 					local selection = action_state.get_selected_entry()
+-- 					if selection then
+-- 						require("qnote").open_todo(selection.value)
+-- 					end
+-- 				end)
+-- 				return true
+-- 			end,
+-- 		})
+-- 		:find()
+-- end
+
 function M.pick_todo(todos)
 	pickers
 		.new({}, {
@@ -57,6 +84,7 @@ function M.pick_todo(todos)
 				end,
 			}),
 			attach_mappings = function(prompt_bufnr, map)
+				-- Ouvrir une note sur entrée
 				actions.select_default:replace(function()
 					actions.close(prompt_bufnr)
 					local selection = action_state.get_selected_entry()
@@ -64,10 +92,28 @@ function M.pick_todo(todos)
 						require("qnote").open_todo(selection.value)
 					end
 				end)
+
+				-- Archiver avec <C-a>
+				map("i", "<C-a>", function()
+					local selection = action_state.get_selected_entry()
+					if selection then
+						actions.close(prompt_bufnr)
+						M.send_qnote_request("PATCH", "toggle_archived", selection.value)
+					end
+				end)
+
+				-- Supprimer avec <C-d>
+				map("i", "<C-d>", function()
+					local selection = action_state.get_selected_entry()
+					if selection then
+						actions.close(prompt_bufnr)
+						M.send_qnote_request("DELETE", "delete_todo", selection.value)
+					end
+				end)
+
 				return true
 			end,
 		})
 		:find()
 end
-
 return M

@@ -326,16 +326,18 @@ function M.send_new_todo(bufnr, content_type)
 	end
 end
 
-M.setup_autosave()
--- vim.api.nvim_create_user_command("QnoteNewText", function()
--- 	require("qnote").create_todo("text")
--- end, {})
--- vim.api.nvim_create_user_command("QnoteNewCheckbox", function()
--- 	require("qnote").create_todo("checkboxes")
--- end, {})
--- vim.api.nvim_create_user_command("Qnote", function()
--- 	require("qnote").show_todos()
--- end, {})
+function M.send_qnote_request(method, endpoint, id)
+	local url = string.format("%s/api/%s/%d", qnote_config.server_url, endpoint, id)
+	local cmd = string.format("curl -s -X %s -b %s '%s'", method, qnote_config.cookie_file, url)
+
+	local response = vim.fn.systemlist(cmd)
+
+	if vim.v.shell_error == 0 then
+		print(string.format("Todo %d mis à jour avec succès !", id))
+	else
+		print(string.format("Erreur lors de la requête %s sur le todo %d.", method, id))
+	end
+end
 
 vim.api.nvim_create_user_command("Qnote", function(opts)
 	local arg = table.concat(opts.fargs, " ")
@@ -349,5 +351,31 @@ vim.api.nvim_create_user_command("Qnote", function(opts)
 		print("Usage: :Qnote show | new text | new checkboxes")
 	end
 end, { nargs = "+" }) -- Accepte plusieurs arguments
+
+vim.api.nvim_create_user_command("Qnote", function(opts)
+	local args = vim.split(opts.args, " ")
+	local action = args[1]
+
+	if not action then
+		print("Usage: Qnote show | new text | new todo | {archive|delete} {id}")
+		return
+	end
+
+	if action == "show" then
+		require("qnote").show_todos()
+	elseif action == "new" and args[2] == "text" then
+		require("qnote").create_todo("text")
+	elseif action == "new" and args[2] == "todo" then
+	elseif action == "archive" then
+		local id = tonumber(args[2])
+		M.send_qnote_request("PATCH", "toggle_archived", id)
+	elseif action == "delete" then
+		local id = tonumber(args[2])
+		M.send_qnote_request("DELETE", "delete_todo", id)
+	else
+		print("Action inconnue: " .. action)
+	end
+end, { nargs = "*" })
+M.setup_autosave()
 
 return M
