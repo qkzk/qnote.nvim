@@ -61,7 +61,3 @@ Issues and pull requests are welcome!
 Visit https://github.com/qkzk/qnote.nvim for contributions and feature requests.
 
 
-License
---------
-qnote.nvim is released under the MIT License.
-
