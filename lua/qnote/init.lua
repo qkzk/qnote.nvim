@@ -354,12 +354,14 @@ end
 -- 	end
 -- end, { nargs = "+" }) -- Accepte plusieurs arguments
 
+M.usage = "Usage: Qnote show | new text | new todo | {archive|delete} {id}"
+
 vim.api.nvim_create_user_command("Qnote", function(opts)
 	local args = vim.split(opts.args, " ")
 	local action = args[1]
 
 	if not action then
-		print("Usage: Qnote show | new text | new todo | {archive|delete} {id}")
+		print(M.usage)
 		return
 	end
 
@@ -376,9 +378,10 @@ vim.api.nvim_create_user_command("Qnote", function(opts)
 		local id = tonumber(args[2])
 		M.send_qnote_request("DELETE", "delete_todo", id)
 	else
-		print("Usage: Qnote show | new text | new todo | {archive|delete} {id}")
+		print(M.usage)
 	end
 end, { nargs = "*" })
+
 M.setup_autosave()
 
 return M
