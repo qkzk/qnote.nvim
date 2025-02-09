@@ -98,7 +98,7 @@ function M.pick_todo(todos)
 					local selection = action_state.get_selected_entry()
 					if selection then
 						actions.close(prompt_bufnr)
-						M.send_qnote_request("PATCH", "toggle_archived", selection.value)
+						require("qnote").send_qnote_request("PATCH", "toggle_archived", selection.value)
 					end
 				end)
 
@@ -107,7 +107,7 @@ function M.pick_todo(todos)
 					local selection = action_state.get_selected_entry()
 					if selection then
 						actions.close(prompt_bufnr)
-						M.send_qnote_request("DELETE", "delete_todo", selection.value)
+						require("qnote").send_qnote_request("DELETE", "delete_todo", selection.value)
 					end
 				end)
 
