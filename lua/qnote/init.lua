@@ -275,8 +275,6 @@ function M.create_todo(content_type)
 	vim.bo[bufnr].buftype = "" -- Important pour permettre la sauvegarde
 	vim.bo[bufnr].swapfile = false
 
-	bufnr = vim.api.nvim_create_buf(true, false) -- Buffer listé, non éphémère
-
 	local default_content
 	if content_type == "text" then
 		default_content = { "# Title", "", "Your content here..." }
