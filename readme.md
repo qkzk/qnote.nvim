@@ -2,6 +2,5 @@
 
 ## TODO 
 
-- [ ] complétion
 - [ ] better error messages
 - [ ] autoformat (lol)

@@ -7,15 +7,20 @@ M.config = {
 	server_url = "https://qkzk.ddns.net:4000", -- Par défaut
 }
 
+---Setup the config
+---@param config table
 function M.setup(config)
 	M.config = vim.tbl_extend("force", M.config, config or {})
 end
 
 local sets = { { 97, 122 }, { 65, 90 }, { 48, 57 } } -- a-z, A-Z, 0-9
 
-local function string_random(chars)
+---returns a random string of len `size`
+---@param size number positive integer
+---@return string - of length `size`
+local function string_random(size)
 	local str = ""
-	for i = 1, chars do
+	for i = 1, size do
 		math.randomseed(os.clock() ^ 5)
 		local charset = sets[math.random(1, #sets)]
 		str = str .. string.char(math.random(charset[1], charset[2]))
@@ -23,26 +28,31 @@ local function string_random(chars)
 	return str
 end
 
+---returns login & password read from creds file
+---If the file can't be opened or is invalid, returns `nil, nil`
+---@return string | nil
+---@return string | nil
 local function read_creds()
 	local file = io.open(M.config.creds_file, "r")
 
 	if not file then
-		print("Impossible de lire " .. M.config.creds_file)
+		print("Couldn't read " .. M.config.creds_file)
 		return nil, nil
 	end
 
-	local username = file:read("*l") -- Lire la première ligne
-	local password = file:read("*l") -- Lire la deuxième ligne
+	local username = file:read("*l")
+	local password = file:read("*l")
 	file:close()
 
 	if not username or not password then
-		print("Fichier " .. M.config.creds_file .. " invalide")
+		print("Invalid file " .. M.config.creds_file)
 		return nil, nil
 	end
 
 	return username, password
 end
 
+---login to the server, sending login & password through a POST request.
 local function login()
 	local username, password = read_creds()
 	-- print("username", username, "password", password)
@@ -66,14 +76,16 @@ local function login()
 	-- print(response)
 
 	if vim.v.shell_error ~= 0 then
-		print("Échec de l'authentification.")
+		print("Authentification failed.")
 		return false
 	end
 
-	print("Connexion réussie.")
+	-- print("Authentification successful")
 	return true
 end
 
+---fetch todos from server with a GET request. Returns a table of todos
+---@return table - a table of todos
 function M.fetch_todos()
 	login()
 	local url = string.format("%s/api/get_todos", M.config.server_url)
@@ -81,17 +93,17 @@ function M.fetch_todos()
 	-- print(cmd)
 	local response = vim.fn.systemlist(cmd)
 
-	-- 🚀 Convertit la table en string JSON
+	-- parse the table into json
 	response = table.concat(response, "\n")
 
-	-- print(response) -- Afficher le JSON brut pour vérifier
+	-- print(response)
 
-	-- Si la requête échoue, tenter de se reconnecter puis refaire la requête
+	-- If the requests fails, try again.
 	if vim.v.shell_error ~= 0 or response:match("Unauthorized") then
 		print("Session expirée, tentative de reconnexion...")
 		if login() then
-			response = vim.fn.systemlist(cmd) -- Retenter la récupération
-			response = table.concat(response, "\n") -- 🔥 Transformer encore en string
+			response = vim.fn.systemlist(cmd)
+			response = table.concat(response, "\n")
 			-- print(response)
 			return response
 		else
@@ -99,83 +111,87 @@ function M.fetch_todos()
 		end
 	end
 
-	-- Ouvre un buffer et affiche la réponse brute (DEBUG)
-	-- vim.api.nvim_command("new")
-	-- vim.api.nvim_buf_set_lines(0, 0, -1, false, vim.split(response, "\n"))
 	return response
 end
 
 local telescope_qnote = require("qnote.telescope")
 
+---Display todos in telescope finder
 function M.show_todos()
 	local todos_json = M.fetch_todos()
 	-- print(todos_json)
-	-- print(vim.inspect(todos_json)) -- Debug: voir la vraie valeur retournée
+	-- print(vim.inspect(todos_json))
 	if not todos_json or type(todos_json) ~= "string" then
-		print("Erreur : fetch_todos() ne retourne pas un JSON valide")
+		print("Error : fetch_todos() didn't return a valid JSON")
 		return
 	end
 
 	local success, todos = pcall(vim.json.decode, todos_json)
 	if not success then
-		print("Erreur : impossible de décoder les todos")
+		print("Error : couldn't read the todos")
 		return
 	end
 
 	telescope_qnote.pick_todo(todos)
 end
 
+---writes todo content into lines.
+---@param todo table  _checkboxes_ kind
+local function fill_checkboxes_line(todo, lines)
+	table.insert(lines, "**TODO:**")
+	for _, item in ipairs(todo.content.Checkboxes.todo) do
+		local checkbox_lines = vim.split(item, "\n", { plain = true })
+		for _, line in ipairs(checkbox_lines) do
+			table.insert(lines, "- [ ] " .. line)
+		end
+	end
+	table.insert(lines, "")
+	table.insert(lines, "**DONE:**")
+	for _, item in ipairs(todo.content.Checkboxes.done) do
+		local checkbox_lines = vim.split(item, "\n", { plain = true })
+		for _, line in ipairs(checkbox_lines) do
+			table.insert(lines, "- [x] " .. line)
+		end
+	end
+end
+
+---Opens `todo` into a buffer
+---@param todo table
 function M.open_todo(todo)
-	-- Vérifie si un buffer existe déjà pour ce todo
-	local bufnr = vim.fn.bufnr(string.format("/tmp/qnote_%d.md", todo.id))
+	local bufname = string.format("/tmp/qnote_%d.md", todo.id)
+	-- check if a buffer already exists for this todo
+	local bufnr = vim.fn.bufnr(bufname)
 
 	if bufnr == -1 then
-		-- Crée un nouveau buffer s'il n'existe pas encore
-		bufnr = vim.api.nvim_create_buf(true, false) -- Buffer listé, non éphémère
-		vim.api.nvim_buf_set_name(bufnr, string.format("/tmp/qnote_%d.md", todo.id))
+		bufnr = vim.api.nvim_create_buf(true, false)
+		vim.api.nvim_buf_set_name(bufnr, bufname)
 
-		-- Assurer que le buffer est sauvegardable
+		-- Ensure buffer is writable
 		vim.bo[bufnr].buflisted = true
-		vim.bo[bufnr].buftype = "" -- Important pour permettre la sauvegarde
-		vim.bo[bufnr].bufhidden = "hide" -- Conserver le buffer sans le supprimer
+		vim.bo[bufnr].buftype = "" -- Allows saving
+		vim.bo[bufnr].bufhidden = "hide" -- Keep the buffer don't delete
 		vim.bo[bufnr].swapfile = false
 	end
 
-	-- Change le buffer courant sans ouvrir une nouvelle fenêtre
 	vim.api.nvim_set_current_buf(bufnr)
 
-	-- Remplit le buffer avec le titre et le contenu
 	local lines = {
-		"# " .. todo.title, -- Titre
-		"", -- Ligne vide pour séparation
+		"# " .. todo.title,
+		"",
 	}
 
-	-- Ajoute le contenu en fonction du type
+	-- Fill the content depending of todo kind.
 	if todo.content.Text then
 		local text_lines = vim.split(todo.content.Text, "\n", { plain = true })
 		vim.list_extend(lines, text_lines)
 	elseif todo.content.Checkboxes then
-		table.insert(lines, "**TODO:**")
-		for _, item in ipairs(todo.content.Checkboxes.todo) do
-			local checkbox_lines = vim.split(item, "\n", { plain = true })
-			for _, line in ipairs(checkbox_lines) do
-				table.insert(lines, "- [ ] " .. line)
-			end
-		end
-		table.insert(lines, "")
-		table.insert(lines, "**DONE:**")
-		for _, item in ipairs(todo.content.Checkboxes.done) do
-			local checkbox_lines = vim.split(item, "\n", { plain = true })
-			for _, line in ipairs(checkbox_lines) do
-				table.insert(lines, "- [x] " .. line)
-			end
-		end
+		fill_checkboxes_line(todo, lines)
 	end
 
-	-- Écrit dans le buffer
 	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
 end
 
+---Setup an autosave function, sending POST request when the buffer is written
 function M.setup_autosave()
 	vim.api.nvim_create_autocmd("BufWritePost", {
 		pattern = "qnote_*.md",
@@ -183,41 +199,43 @@ function M.setup_autosave()
 			local bufnr = args.buf
 			local filename = vim.api.nvim_buf_get_name(bufnr)
 
-			-- Extrait l'ID du todo depuis le nom du fichier
+			-- Read todo.id from buffer content
 			local todo_id = filename:match("qnote_(%d+)%.md")
 			if not todo_id then
-				print("Erreur : Impossible d'extraire l'ID du todo.")
+				print("Error : couldn't read id from buffer")
 				return
 			end
 
-			-- Récupère le contenu du buffer
 			local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
 
-			-- Analyse le type de contenu
 			local content_type, payload = M.parse_todo_content(lines)
 
-			-- Envoie le todo mis à jour
 			if content_type and payload then
 				M.send_todo_update(todo_id, content_type, payload)
 			else
-				print("Erreur : Contenu invalide, aucune mise à jour envoyée.")
+				print("Error : invalid content, nothing sent.")
 			end
 		end,
 	})
 end
+
+---parse the todo content
+---@param lines table
+---@return nil
+---@return string | table
 function M.parse_todo_content(lines)
-	-- Vérifie qu'il y a au moins une ligne
+	-- Check if the content has at least one line
 	if #lines == 0 then
-		return nil, "Erreur : contenu vide"
+		return nil, "Error : empty content"
 	end
 
-	-- Récupère le titre de la première ligne (suppose le format "# titre")
+	-- Extract title
 	local title = lines[1]:match("^#%s*(.+)")
 	if not title then
 		return nil, "Erreur : titre introuvable"
 	end
 
-	-- Récupère le contenu (sans le titre et les lignes vides en début)
+	-- Extract content, ignoring empty lines
 	local content_lines = {}
 	for i = 2, #lines do
 		if lines[i] ~= "" then
@@ -225,12 +243,12 @@ function M.parse_todo_content(lines)
 		end
 	end
 
-	-- Si c'est un simple texte, retourne `Text`
+	-- if todo is "Text" kind, returns "Text" and payload
 	if not vim.tbl_contains(content_lines, "**TODO:**") then
 		return "Text", { title = title, content = table.concat(content_lines, "\n") }
 	end
 
-	-- Sinon, on parse les checkboxes
+	-- else, parse the todo & done checkboxes...
 	local todos, dones = {}, {}
 
 	for _, line in ipairs(content_lines) do
@@ -240,10 +258,14 @@ function M.parse_todo_content(lines)
 			table.insert(dones, line:match("%- %[x%] (.+)"))
 		end
 	end
-
+	-- and returns it
 	return "Checkboxes", { title = title, todo = todos, done = dones }
 end
 
+---Update the todo content
+---@param id number
+---@param content_type string
+---@param payload table
 function M.send_todo_update(id, content_type, payload)
 	local url = string.format("https://qkzk.ddns.net:4000/api/patch_todo_%s/%s", content_type:lower(), id)
 	local json_data = vim.fn.json_encode(payload)
@@ -259,12 +281,15 @@ function M.send_todo_update(id, content_type, payload)
 	-- print(response)
 
 	if vim.v.shell_error == 0 then
-		print("Todo mis à jour avec succès !")
+		print("Todo updated successfuly")
 	else
-		print("Erreur lors de la mise à jour du todo.")
+		print("Error udpating todo.")
 	end
 end
 
+---Creates a new todo of given kind
+---The todo is displayed in a randomly named buffer.
+---@param content_type string "text" or "todo"
 function M.create_todo(content_type)
 	local bufnr = vim.api.nvim_create_buf(false, true)
 	local filename = "/tmp/qnote_new_" .. string_random(4) .. ".md"
@@ -272,7 +297,7 @@ function M.create_todo(content_type)
 	vim.api.nvim_buf_set_name(bufnr, filename)
 	vim.bo[bufnr].buflisted = true
 	vim.bo[bufnr].bufhidden = "wipe"
-	vim.bo[bufnr].buftype = "" -- Important pour permettre la sauvegarde
+	vim.bo[bufnr].buftype = "" -- allows saving
 	vim.bo[bufnr].swapfile = false
 
 	local default_content
@@ -285,29 +310,32 @@ function M.create_todo(content_type)
 	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, default_content)
 	vim.api.nvim_set_current_buf(bufnr)
 
-	-- Ajouter un autocmd pour sauvegarder et envoyer
+	-- Creates an autocommand to send the todo
 	vim.api.nvim_create_autocmd("BufWritePost", {
 		buffer = bufnr,
 		callback = function()
-			M.send_new_todo(bufnr, content_type)
+			M.send_new_todo(bufnr)
 		end,
 	})
 end
 
-function M.send_new_todo(bufnr, content_type)
+---Send a new todo to the server
+---The content kind is read from the buffer
+---@param bufnr number
+function M.send_new_todo(bufnr)
 	local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
 	local title = lines[1]:gsub("^#%s*", "") -- Supprime le `#` devant le titre
 
-	-- Parser le contenu
+	-- Parse conctent
 	local content_type, payload = M.parse_todo_content(lines)
 	payload.title = title -- Ajouter le titre
 
-	-- Sélectionner la route
+	-- Pick correct route
 	local route = (content_type == "Text") and "/api/post_text" or "/api/post_checkboxes"
 	local url = M.config.server_url .. route
 	local json_data = vim.fn.json_encode(payload)
 
-	-- Exécuter la requête
+	-- Send the request
 	local cmd = string.format(
 		"curl -s -X POST -b %s -H 'Content-Type: application/json' -d %s '%s'",
 		M.config.cookie_file,
@@ -326,23 +354,32 @@ function M.send_new_todo(bufnr, content_type)
 	end
 end
 
+---Send qnote request.
+---Used to update or delete todo.
+---@param method string "DELETE" or "PATCH"
+---@param endpoint string
+---@param id number | nil
 function M.send_qnote_request(method, endpoint, id)
 	local url = string.format("%s/api/%s/%d", M.config.server_url, endpoint, id)
 	local cmd = string.format("curl -s -X %s -b %s '%s'", method, M.config.cookie_file, url)
 
-	print(cmd)
+	-- print(cmd)
 	local response = vim.fn.systemlist(cmd)
-	print(response)
+	-- print(response)
 
 	if vim.v.shell_error == 0 then
-		print(string.format("Todo %d mis à jour avec succès !", id))
+		print(string.format("Todo %d updated successfuly", id))
 	else
-		print(string.format("Erreur lors de la requête %s sur le todo %d.", method, id))
+		print(string.format("Error sending request %s for todo %d.", method, id))
 	end
 end
 
+---Usage message displayed when user types an unknown command
 M.usage = "Usage: Qnote show | new text | new todo | {archive|delete} {id}"
 
+---Execute a "qnote" command.
+---If `opts` doesn't contain a valid "args" table, displays the usage and quits.
+---@param opts table
 local function run_command(opts)
 	local args = vim.split(opts.args, " ")
 	local action = args[1]
@@ -369,6 +406,10 @@ local function run_command(opts)
 	end
 end
 
+---Completion for COMMAND mode.
+---@param _ any
+---@param line string
+---@return unknown[]
 local function complete(_, line)
 	local commands = { "show", "new text", "new todo", "archive", "delete" }
 	local words = vim.split(line, "%s+")
