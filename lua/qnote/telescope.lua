@@ -43,6 +43,10 @@ local function make_entry(todo)
 		preview_command = fill_preview,
 	}
 end
+
+---Creates a telescope finder
+---@param todos any
+---@return table
 local function make_finder(todos)
 	return {
 		results = todos,
@@ -88,6 +92,16 @@ local function create_mappings(prompt_bufnr, map)
 	return true
 end
 
+---Creates the preview command
+---@param self any
+---@param entry table
+---@param status any
+function make_preview(self, entry, status)
+	if entry and entry.preview_command then
+		entry.preview_command(entry, self.state.bufnr)
+	end
+end
+
 ---Action executed when a todo is picked.
 ---@param todos table
 function M.pick_todo(todos)
@@ -97,11 +111,7 @@ function M.pick_todo(todos)
 			finder = finders.new_table(make_finder(todos)),
 			sorter = conf.generic_sorter({}),
 			previewer = previewers.new_buffer_previewer({
-				define_preview = function(self, entry, status)
-					if entry and entry.preview_command then
-						entry.preview_command(entry, self.state.bufnr)
-					end
-				end,
+				define_preview = make_preview,
 			}),
 			attach_mappings = create_mappings,
 		})
