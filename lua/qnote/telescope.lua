@@ -49,6 +49,8 @@ end
 ---@return table
 local function make_finder(todos)
 	return {
+		value = "INFO",
+		display = " [Ctrl-A] Archive  |  [Ctrl-D] Delete ",
 		results = todos,
 		entry_maker = make_entry,
 	}
