@@ -49,7 +49,6 @@ end
 ---@return table
 local function make_finder(todos)
 	return {
-		title = " [Ctrl-A] Archive  |  [Ctrl-D] Delete ",
 		results = todos,
 		entry_maker = make_entry,
 	}
@@ -108,7 +107,9 @@ end
 function M.pick_todo(todos)
 	pickers
 		.new({}, {
-			prompt_title = "Todos",
+			prompt_title = " <Return> Display | <C-a> Archive  | <C-d> Delete ",
+			results_title = "Todos",
+			preview_title = "Content",
 			finder = finders.new_table(make_finder(todos)),
 			sorter = conf.generic_sorter({}),
 			previewer = previewers.new_buffer_previewer({
