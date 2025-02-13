@@ -4,3 +4,4 @@
 
 - [ ] better error messages
 - [ ] autoformat (lol)
+- [ ] check session for every API call

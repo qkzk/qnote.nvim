@@ -100,7 +100,7 @@ function M.fetch_todos()
 
 	-- If the requests fails, try again.
 	if vim.v.shell_error ~= 0 or response:match("Unauthorized") then
-		print("Session expirée, tentative de reconnexion...")
+		print("Session has expired. Reconnect.")
 		if login() then
 			response = vim.fn.systemlist(cmd)
 			response = table.concat(response, "\n")
@@ -335,6 +335,8 @@ function M.send_new_todo(bufnr)
 	local url = M.config.server_url .. route
 	local json_data = vim.fn.json_encode(payload)
 
+	-- login
+	login()
 	-- Send the request
 	local cmd = string.format(
 		"curl -s -X POST -b %s -H 'Content-Type: application/json' -d %s '%s'",
@@ -363,6 +365,7 @@ function M.send_qnote_request(method, endpoint, id)
 	local url = string.format("%s/api/%s/%d", M.config.server_url, endpoint, id)
 	local cmd = string.format("curl -s -X %s -b %s '%s'", method, M.config.cookie_file, url)
 
+	login()
 	-- print(cmd)
 	local response = vim.fn.systemlist(cmd)
 	-- print(response)
